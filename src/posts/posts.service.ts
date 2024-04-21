@@ -89,8 +89,14 @@ export class PostsService {
   }
 
   async createComment(postId: string, createCommentDto: CreateCommentDto) {
+    const post = await this.postModel.findById(postId);
+    if (!post) {
+      throw new NotFoundException('Post was not found');
+    }
+
     const comment = new this.commentModel({
       ...createCommentDto,
+      post: postId,
       createdAt: new Date(),
     });
 

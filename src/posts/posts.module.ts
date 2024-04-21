@@ -6,6 +6,7 @@ import { PostsController } from './posts.controller';
 import { LikesController } from './likes.controller';
 import { Post, PostSchema } from './schemas/post.schema';
 import { PostLike, PostLikeSchema } from './schemas/like.schema';
+import { CommentsController } from './comments.controller';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { PostLike, PostLikeSchema } from './schemas/like.schema';
     ]),
   ],
   providers: [PostsService],
-  controllers: [PostsController, LikesController],
+  controllers: [PostsController, LikesController, CommentsController],
   exports: [PostsService],
 })
 export class PostsModule {}
