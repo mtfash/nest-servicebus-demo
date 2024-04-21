@@ -1,28 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { HydratedDocument } from 'mongoose';
 
-type ReactionType = 'like' | 'dislike';
-
-export class PostReaction {
-  @Prop()
-  reactionType: ReactionType;
-
-  @Prop()
-  reactionBy: string;
-
-  @Prop()
-  createdAt: Date;
-}
-
-export class PostComment {
-  @Prop()
-  comment: string;
-
-  @Prop()
-  author: string;
-
-  @Prop()
-  createdAt: Date;
-}
+export type PostDocument = HydratedDocument<Post>;
 
 @Schema()
 export class Post {
@@ -36,12 +15,6 @@ export class Post {
 
   @Prop()
   createdAt: Date;
-
-  @Prop([PostComment])
-  comments: PostComment[];
-
-  @Prop([PostReaction])
-  reactions: PostReaction[];
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
