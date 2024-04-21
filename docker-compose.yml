@@ -1,0 +1,45 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
+    ports:
+      - 9200:9200
+    environment:
+      - xpack.security.enabled=false
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.15.0
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
+    environment:
+      - xpack.security.enabled=false
+  filebeat:
+    build:
+      context: ./filebeat
+      dockerfile: Dockerfile
+    container_name: filebeat
+    command: filebeat -e -strict.perms=false
+    volumes:
+      - ./nestjs-log/logs:/src/logs
+    environment:
+      - xpack.security.enabled=false
+    depends_on:
+      - elasticsearch
+      - kibana
+
+  nestjs-app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: nestjs-app
+    ports:
+      - 3000:3000
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./nestjs-log/logs:/src/logs
+
+volumes:
+  elasticsearch_data:
+    driver: local

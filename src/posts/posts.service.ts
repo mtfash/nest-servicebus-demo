@@ -2,11 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post } from './schemas/post.schema';
+import { Comment } from './schemas/comment.schema';
 import { PostLike } from './schemas/like.schema';
+import { EventType } from 'src/events/types';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { CreateCommentDto } from './dtos/create-comment.dto';
-import { Comment } from './schemas/comment.schema';
+import { EventHubsProducerService } from '../events/eventhubs-producer.service';
 
 @Injectable()
 export class PostsService {
@@ -17,6 +19,7 @@ export class PostsService {
     private readonly postLikeModel: Model<PostLike>,
     @InjectModel(Comment.name)
     private readonly commentModel: Model<Comment>,
+    private readonly eventHubsProducer: EventHubsProducerService,
   ) {}
 
   async findAll() {
@@ -74,7 +77,20 @@ export class PostsService {
         post: id,
       });
 
-      return await createdPostLike.save();
+      const entry = await createdPostLike.save();
+
+      await this.eventHubsProducer.sendAppEvent({
+        eventId: entry.id,
+        eventType: EventType.PostLike,
+        payload: {
+          timestamp: new Date(),
+          likedBy: likedBy,
+          post: entry.id,
+          postOwner: post.author,
+        },
+      });
+
+      return entry;
     } catch (error) {
       // If the user already liked this post
       if (error.code === 11000) {
@@ -100,6 +116,20 @@ export class PostsService {
       createdAt: new Date(),
     });
 
-    return await comment.save();
+    const entry = await comment.save();
+
+    await this.eventHubsProducer.sendAppEvent({
+      eventId: entry.id,
+      eventType: EventType.PostComment,
+      payload: {
+        timestamp: new Date(),
+        comment: comment.comment,
+        commentAuthor: comment.author,
+        post: postId,
+        postOwner: post.author,
+      },
+    });
+
+    return entry;
   }
 }
