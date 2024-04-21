@@ -7,7 +7,6 @@ import {
   ReceivedEventData,
   earliestEventPosition,
 } from '@azure/event-hubs';
-import { DefaultAzureCredential } from '@azure/identity';
 import { BlobCheckpointStore } from '@azure/eventhubs-checkpointstore-blob';
 import { ContainerClient } from '@azure/storage-blob';
 import { SBusProducerService } from './sbus-producer.service';
@@ -16,7 +15,8 @@ import logger from 'src/helpers/logger';
 
 @Injectable()
 export class EventHubsConsumerService {
-  private readonly eventhubFQNS: string;
+  private readonly storageConnectionString: string;
+  private readonly connectionString: string;
   private readonly eventhubName: string;
   private readonly consumerGroup: string;
   private readonly storageAccount: string;
@@ -26,13 +26,14 @@ export class EventHubsConsumerService {
     config: ConfigService,
     private readonly sbusProducer: SBusProducerService,
   ) {
-    this.eventhubFQNS = config.get('EVENTHUB_FQNS');
+    this.storageConnectionString = config.get('STORAGE_CONNECTION_STRING');
+    this.connectionString = config.get('EVENTHUB_CONNECTION_STRING');
     this.eventhubName = config.get('EVENTHUB_NAME');
     this.consumerGroup = config.get('EVENTHUB_CONSUMER_GROUP');
     this.storageAccount = config.get('EVENTHUB_STORAGE_ACCOUNT');
     this.containerName = config.get('EVENTHUB_CHECKPOINT_CONTAINER_NAME');
 
-    assert(this.eventhubFQNS, 'EVENTHUB_FQNS is not defined');
+    assert(this.connectionString, 'EVENTHUB_CONNECTION_STRING is not defined');
     assert(this.eventhubName, 'EVENTHUB_NAME is not defined');
     assert(this.consumerGroup, 'EVENTHUB_CONSUMER_GROUP is not defined');
     assert(this.storageAccount, 'EVENTHUB_STORAGE_ACCOUNT is not defined');
@@ -43,17 +44,17 @@ export class EventHubsConsumerService {
   }
 
   start() {
-    const credential = new DefaultAzureCredential();
-
-    const containerURL = `https://${this.storageAccount}.blob.core.windows.net/${this.containerName}`;
-    const containerClient = new ContainerClient(containerURL, credential);
+    // const containerURL = `https://${this.storageAccount}.blob.core.windows.net/${this.containerName}`;
+    const containerClient = new ContainerClient(
+      this.storageConnectionString,
+      this.containerName,
+    );
 
     const checkpointStore = new BlobCheckpointStore(containerClient);
     const consumerClient = new EventHubConsumerClient(
       this.consumerGroup,
-      this.eventhubFQNS,
+      this.connectionString,
       this.eventhubName,
-      credential,
       checkpointStore,
     );
 
@@ -86,7 +87,6 @@ export class EventHubsConsumerService {
 
   async processError(error: Error | MessagingError, context: PartitionContext) {
     logger.error(error.message, {
-      eventhubNameSpace: this.eventhubFQNS,
       eventhub: this.eventhubName,
       consumerGroup: context.consumerGroup,
       partitionId: context.partitionId,

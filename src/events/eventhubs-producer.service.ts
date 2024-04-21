@@ -1,27 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventHubProducerClient } from '@azure/event-hubs';
-import { DefaultAzureCredential } from '@azure/identity';
 import { AppEvent } from 'src/events/types';
 import logger from 'src/helpers/logger';
 
 @Injectable()
 export class EventHubsProducerService {
-  private readonly eventHubFQNS: string;
+  private readonly connectionString: string;
   private readonly eventHubName: string;
 
   constructor(private readonly config: ConfigService) {
-    this.eventHubFQNS = config.get('EVENTHUB_FQNS');
+    this.connectionString = config.get('EVENTHUB_CONNECTION_STRING');
     this.eventHubName = config.get('EVENTHUB_NAME');
   }
 
   async sendAppEvent(event: AppEvent) {
-    const credential = new DefaultAzureCredential();
-
     const producer = new EventHubProducerClient(
-      this.eventHubFQNS,
+      this.connectionString,
       this.eventHubName,
-      credential,
     );
 
     const batch = await producer.createBatch();

@@ -1,23 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppEvent, EventType } from './types';
-import { DefaultAzureCredential } from '@azure/identity';
 import { ServiceBusClient, ServiceBusMessage } from '@azure/service-bus';
 import { assert } from 'src/helpers/assert';
 import logger from 'src/helpers/logger';
 
 @Injectable()
 export class SBusProducerService {
-  private readonly serviceBusNamespace: string;
+  private readonly connectionString: string;
   private readonly postLikesQueueName: string;
   private readonly postCommentsQueueName: string;
 
   constructor(private readonly config: ConfigService) {
-    this.serviceBusNamespace = config.get('SERVICEBUS_FQNS');
+    this.connectionString = config.get('SERVICEBUS_CONNECTION_STRING');
     this.postLikesQueueName = config.get('POST_LIKES_QUEUE');
     this.postCommentsQueueName = config.get('COMMENTS_QUEUE');
 
-    assert(this.serviceBusNamespace, 'SERVICEBUS_FQNS is not defined');
+    assert(
+      this.connectionString,
+      'SERVICEBUS_CONNECTION_STRING is not defined',
+    );
     assert(this.postLikesQueueName, 'POST_LIKES_QUEUE variable is not defined');
     assert(
       this.postCommentsQueueName,
@@ -34,9 +36,7 @@ export class SBusProducerService {
       queueName = this.postCommentsQueueName;
     }
 
-    const credential = new DefaultAzureCredential();
-
-    const sbClient = new ServiceBusClient(this.serviceBusNamespace, credential);
+    const sbClient = new ServiceBusClient(this.connectionString);
 
     const sender = sbClient.createSender(queueName);
 

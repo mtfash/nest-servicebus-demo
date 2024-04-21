@@ -1,4 +1,3 @@
-import { DefaultAzureCredential } from '@azure/identity';
 import {
   ProcessErrorArgs,
   ServiceBusClient,
@@ -12,23 +11,25 @@ import logger from 'src/helpers/logger';
 
 @Injectable()
 export class SBusCommentsConsumer {
-  private readonly serviceBusNamespace: string;
+  private readonly connectionString: string;
   private readonly commentsQueueName: string;
 
   constructor(
     config: ConfigService,
     private readonly notificationsService: NotificationsService,
   ) {
-    this.serviceBusNamespace = config.get('SERVICEBUS_FQNS');
+    this.connectionString = config.get('SERVICEBUS_CONNECTION_STRING');
     this.commentsQueueName = config.get('COMMENTS_QUEUE');
 
-    assert(this.serviceBusNamespace, 'SERVICEBUS_FQNS variable is not defined');
+    assert(
+      this.connectionString,
+      'SERVICEBUS_CONNECTION_STRING variable is not defined',
+    );
     assert(this.commentsQueueName, 'COMMENTS_QUEUE variable is not defined');
   }
 
   async start() {
-    const credential = new DefaultAzureCredential();
-    const sbClient = new ServiceBusClient(this.serviceBusNamespace, credential);
+    const sbClient = new ServiceBusClient(this.connectionString);
     const receiver = sbClient.createReceiver(this.commentsQueueName);
 
     await receiver.subscribe({
