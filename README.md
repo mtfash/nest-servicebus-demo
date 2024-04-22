@@ -1,73 +1,70 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# How to run and deploy the application in different environments
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+You can simply start and test the project using `npm run start:dev` command. Just make sure you include all the necessary variables in an `.env` file. The project is also dockerized so you can run it and all the dependencies using docker compose. Just run `docker compose up` in the project root directory (again make sure all the variables are either defined either in .env file or you provide them) and the services will start. The docker compose file includes `Elasticsearch`, `Kibana`, and `Filebeat` services for managing log data.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Since the project is dockerized you can deploy it anywhere which supports docker container without any problem. I was not able to deploy the application on Azure app service due to some new bug in Microsoft Azure which is still not fixed. (https://learn.microsoft.com/en-us/answers/questions/1527674/the-subscription-is-not-allowed-to-create-or-updat)
 
-## Description
+## `.env` FIle
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Make you you define these variables in the `.env` file:
 
-## Installation
-
-```bash
-$ yarn install
+```
+MONGODB_URL=
+STORAGE_CONNECTION_STRING=
+EVENTHUB_CONNECTION_STRING=
+EVENTHUB_FQNS=
+EVENTHUB_NAME=
+EVENTHUB_CONSUMER_GROUP=
+EVENTHUB_STORAGE_ACCOUNT=
+EVENTHUB_CHECKPOINT_CONTAINER_NAME=
+SERVICEBUS_CONNECTION_STRING=
+POST_LIKES_QUEUE=
+COMMENTS_QUEUE=
 ```
 
-## Running the app
+## Testing the Application
 
-```bash
-# development
-$ yarn run start
+After you start the application either with `npm run start` or docker compose, you can open `http://locahost:3000/docs` in the browser. This will open the swagger documentation where you can test the APIs.
 
-# watch mode
-$ yarn run start:dev
+## Application Introduction
 
-# production mode
-$ yarn run start:prod
-```
+This is a very basic application in which a user will create posts and other users can like or leave comments for each post. We use Mongodb as data store. After a user leaves a comment or likes a post a notification will be created explaining the event.
 
-## Test
+### Modules
 
-```bash
-# unit tests
-$ yarn run test
+#### posts
 
-# e2e tests
-$ yarn run test:e2e
+This module defines the schemas, controllers, services related to posts, likes and comments. You can call the APIs to create posts, liking a post, leaving comments, etc. For the sake of simplicity theres' no authentication, and we only store the name of the user whereever a user is needed.
 
-# test coverage
-$ yarn run test:cov
-```
+When you like a post, or make a comment, an event is sent to `EventHubs` using the `EventHubsProducerService` class which is defined in `events` module.
 
-## Support
+In a real world scenario these producers, consumers services each one would probably live in its own process even on different servers or networks, but again for the sake of simplicity we have everything in one project.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+#### events
 
-## Stay in touch
+The events module contains the `EventHubsConsumerService` and `EventHubsProducerService`. The `EventProducerService` is used in the posts module to send the notification events to `EventHubs`. `EventHubsConsumerService` will ingest the events from `EventHubs` and based on the event type will send messages to `ServiceBus` queues: `post-likes` or `post-comments`.
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+#### notifications
 
-## License
+The notifications module contains two `ServiceBus` consumers: `SBusLikesConsumer` and `SBusCommentsConsumer`
+These two consumers will consume the service bus queues for post like and comment messages and transform those messages into notification documents and store them in `notifications` collection.
 
-Nest is [MIT licensed](LICENSE).
+## Logging
+
+The project uses winston to format logs and uses console and file transports to redirect logs to both terminal and filesystem. If you start the project using the docker compose along with ELK dependencies, the filebeat service will read the logs in the file and send it to elastic search.
+
+I initially tried to integrate the application with Micorsoft Azure Monitor service's App Insights but I had difficulty instrumenting winston logger calls and had to use ELK stack.
+
+## Challenges I faced
+
+Two major challenges I faced was trying to deploy the application on Azure's app service and integrating the App Insights with the nest project which I explained both in previous sections.
+
+## What I would improve?
+
+### Aggregate Notifications Documents
+
+Currently I store a new notification document for each like/comment. This is ineffecient and not scalable. Viral posts could possible have tens of thousands of comments and millions of likes. To tackle this we can aggregate unread notifications (those new notifications that user hasn't read yet) together into one notification. So instead of having 100s of notifications each one saying "X liked your post" we can have something like "X, Y, and 87 others liked your post".
+
+### Batching Events
+
+Currently I am sending each event separately to the `EventHubs`. What I can do to make it better is that instead of immediately sending those events to the eventhubs I would push those messages into a buffer and periodically check whether there's any new message in the buffer for example each second, or five seconds depending on the messages throughput and how much delay is acceptable for us.
