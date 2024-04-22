@@ -59,7 +59,7 @@ I initially tried to integrate the application with Micorsoft Azure Monitor serv
 
 Two major challenges I faced was trying to deploy the application on Azure's app service and integrating the App Insights with the nest project which I explained both in previous sections.
 
-## What I would improve?
+## What would I improve?
 
 ### Aggregate Notifications Documents
 
