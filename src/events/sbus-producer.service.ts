@@ -54,6 +54,7 @@ export class SBusProducerService {
       await sender.close();
 
       logger.info(`Batch was sent to '${queueName}' queue`, {
+        service: 'SBusProducerService',
         sbMessage: serviceBusMessage,
       });
     } finally {

@@ -43,13 +43,17 @@ export class SBusCommentsConsumer {
     logger.info(`Received message from queue '${this.commentsQueueName}'`, {
       messageId: message.messageId,
       body: message.body,
+      service: 'SBusCommentsConsumer',
     });
 
     await this.notificationsService.create(message.body);
   }
 
   async processError(error: ProcessErrorArgs) {
-    logger.error(error.error.message, { error });
+    logger.error(error.error.message, {
+      error,
+      service: 'SBusCommentsConsumer',
+    });
     throw error;
   }
 }

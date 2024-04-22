@@ -43,13 +43,14 @@ export class SBusLikesConsumer {
     logger.info(`Received message from queue '${this.postLikesQueueName}'`, {
       messageId: message.messageId,
       body: message.body,
+      service: 'SBusLikesConsumer',
     });
 
     await this.notificationsService.create(message.body);
   }
 
   async processError(error: ProcessErrorArgs) {
-    logger.error(error.error.message, { error });
+    logger.error(error.error.message, { error, service: 'SBusLikesConsumer' });
     throw error;
   }
 }

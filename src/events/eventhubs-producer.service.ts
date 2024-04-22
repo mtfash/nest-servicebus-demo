@@ -27,7 +27,7 @@ export class EventHubsProducerService {
     } else {
       const msg = 'Could not add event to batch';
 
-      logger.error(msg, { event });
+      logger.error(msg, { service: 'EventHubsProducerService', event });
 
       throw new Error(msg);
     }

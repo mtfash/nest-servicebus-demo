@@ -44,7 +44,6 @@ export class EventHubsConsumerService {
   }
 
   start() {
-    // const containerURL = `https://${this.storageAccount}.blob.core.windows.net/${this.containerName}`;
     const containerClient = new ContainerClient(
       this.storageConnectionString,
       this.containerName,
@@ -76,7 +75,10 @@ export class EventHubsConsumerService {
     for (const event of events) {
       logger.info(
         `Event recveived from partition '${context.partitionId}' and consumer group: '${context.consumerGroup}'`,
-        { event },
+        {
+          service: 'EventHubsConsumerService',
+          event,
+        },
       );
 
       await this.sbusProducer.sendMessage(event.body);
@@ -87,6 +89,7 @@ export class EventHubsConsumerService {
 
   async processError(error: Error | MessagingError, context: PartitionContext) {
     logger.error(error.message, {
+      service: 'EventHubsConsumerService',
       eventhub: this.eventhubName,
       consumerGroup: context.consumerGroup,
       partitionId: context.partitionId,

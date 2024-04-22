@@ -4,7 +4,7 @@ services:
     ports:
       - 9200:9200
     environment:
-      - xpack.security.enabled=false
+      - discovery.type=single-node
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.15.0
@@ -12,8 +12,6 @@ services:
       - 5601:5601
     depends_on:
       - elasticsearch
-    environment:
-      - xpack.security.enabled=false
 
   filebeat:
     build:
@@ -23,8 +21,6 @@ services:
     command: filebeat -e -strict.perms=false
     volumes:
       - ./nestjs-log/logs:/src/logs
-    environment:
-      - xpack.security.enabled=false
     depends_on:
       - elasticsearch
       - kibana
