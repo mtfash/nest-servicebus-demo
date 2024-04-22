@@ -2,7 +2,7 @@
 
 You can simply start and test the project using `npm run start:dev` command. Just make sure you include all the necessary variables in an `.env` file. The project is also dockerized so you can run it and all the dependencies using docker compose. Just run `docker compose up` in the project root directory (again make sure all the variables are either defined either in .env file or you provide them) and the services will start. The docker compose file includes `Elasticsearch`, `Kibana`, and `Filebeat` services for managing log data.
 
-Since the project is dockerized you can deploy it anywhere which supports docker container without any problem. I was not able to deploy the application on Azure app service due to some new bug in Microsoft Azure which is still not fixed. (https://learn.microsoft.com/en-us/answers/questions/1527674/the-subscription-is-not-allowed-to-create-or-updat)
+Since the project is dockerized you can deploy it anywhere that support docker containers without any problem. I was not able to deploy the application on Azure app service due to some new bug in Microsoft Azure which is still not fixed. (https://learn.microsoft.com/en-us/answers/questions/1527674/the-subscription-is-not-allowed-to-create-or-updat)
 
 ## `.env` FIle
 
